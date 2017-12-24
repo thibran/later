@@ -135,13 +135,19 @@ impl<T> std::convert::AsRef<Later<T>> for Later<T> {
     }
 }
 
-// keep Deref?
 impl<T> std::ops::Deref for Later<T> {
     type Target = T;
 
     #[inline(always)]
     fn deref(&self) -> &T {
         self.get()
+    }
+}
+
+impl<T> std::ops::DerefMut for Later<T> {
+    #[inline(always)]
+    fn deref_mut(&mut self) -> &mut T {
+        self.get_mut()
     }
 }
 
@@ -373,34 +379,34 @@ mod tests {
 
     #[test]
     fn test_later() {
-        let d = Later::new(|| "abc".to_owned());
-        assert!(! d.has_value());
-        assert_eq!("abc", d.get());
-        assert!(d.has_value());
-        assert_eq!("abc", *d);
+        let l = Later::new(|| "abc".to_owned());
+        assert!(! l.has_value());
+        assert_eq!("abc", l.get());
+        assert!(l.has_value());
+        assert_eq!("abc", *l);
 
         assert_eq!(1, later!(1).into_inner());
         println!("{:?}", later!(2));
-        println!("{:?}", {let d = later!(3); d.get(); d}); 
+        println!("{:?}", {let l = later!(3); l.get(); l}); 
     }
 
     #[test]
     fn test_map() {
-        let d1 = later!({
+        let l1 = later!({
             println!("first");
             100
         });
-        assert!(! d1.has_value());
-        assert_eq!(100, *d1);
-        assert!( d1.has_value());
+        assert!(! l1.has_value());
+        assert_eq!(100, *l1);
+        assert!( l1.has_value());
 
-        let d2 = d1.map(|n| {
+        let l2 = l1.map(|n| {
             println!("second");
             n.to_string()
         });
-        assert!(! d2.has_value());
-        assert_eq!("100", *d2);
-        assert!(d2.has_value());
+        assert!(! l2.has_value());
+        assert_eq!("100", *l2);
+        assert!(l2.has_value());
 
         assert_eq!("ab", later!("a".to_owned()).map(|s| s+"b").get());
     }
