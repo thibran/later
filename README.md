@@ -43,3 +43,4 @@ fn main() {
 * Find a way to implement `map` without `Clone`
 * Write documentation
 * Optional integration with Futures create
+* add std::ops::Fn

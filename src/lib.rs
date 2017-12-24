@@ -53,6 +53,15 @@ impl<T> Later<T> {
         }
     }
 
+    fn new_with_value(val: T) -> Later<T> {
+        let cell = LazyCell::new();
+        let _ = cell.fill(val);
+        Later {
+            cell: cell,
+            f: Box::new(|| unreachable!()),
+        }
+    }
+
     pub fn get(&self) -> &T {
         self.cell.borrow_with(|| (self.f)())
     }
@@ -132,22 +141,6 @@ impl<T> std::convert::AsRef<Later<T>> for Later<T> {
     #[inline(always)]
     fn as_ref(&self) -> &Later<T> {
         &self
-    }
-}
-
-impl<T> std::ops::Deref for Later<T> {
-    type Target = T;
-
-    #[inline(always)]
-    fn deref(&self) -> &T {
-        self.get()
-    }
-}
-
-impl<T> std::ops::DerefMut for Later<T> {
-    #[inline(always)]
-    fn deref_mut(&mut self) -> &mut T {
-        self.get_mut()
     }
 }
 
@@ -373,6 +366,237 @@ impl Into<f64> for Later<f64> {
 }
 
 
+//-------------------------  Operator Traits  -------------------------//
+
+impl<T> std::ops::Add for Later<T>
+    where T: std::ops::Add<Output=T>
+{
+    type Output = Later<T>;
+
+    #[inline(always)]
+    fn add(self, rhs: Later<T>) -> Later<T> {
+        Later::new_with_value(self.into_inner().add(rhs.into_inner()))
+    }
+}
+
+impl<T: std::ops::AddAssign<T>> std::ops::AddAssign for Later<T> {
+    #[inline(always)]
+    fn add_assign(&mut self, rhs: Later<T>) {
+        self.get_mut().add_assign(rhs.into_inner());
+    }
+}
+
+impl<T> std::ops::BitAnd for Later<T>
+    where T: std::ops::BitAnd<Output=T>
+{
+    type Output = Later<T>;
+
+    #[inline(always)]
+    fn bitand(self, rhs: Later<T>) -> Later<T> {
+        Later::new_with_value(self.into_inner().bitand(rhs.into_inner()))
+    }
+}
+
+impl<T: std::ops::BitAndAssign<T>> std::ops::BitAndAssign for Later<T> {
+    #[inline(always)]
+    fn bitand_assign(&mut self, rhs: Later<T>) {
+        self.get_mut().bitand_assign(rhs.into_inner());
+    }
+}
+
+impl<T> std::ops::BitOr for Later<T>
+    where T: std::ops::BitOr<Output=T>
+{
+    type Output = Later<T>;
+
+    #[inline(always)]
+    fn bitor(self, rhs: Later<T>) -> Later<T> {
+        Later::new_with_value(self.into_inner().bitor(rhs.into_inner()))
+    }
+}
+
+impl<T: std::ops::BitOrAssign<T>> std::ops::BitOrAssign for Later<T> {
+    #[inline(always)]
+    fn bitor_assign(&mut self, rhs: Later<T>) {
+        self.get_mut().bitor_assign(rhs.into_inner());
+    }
+}
+
+impl<T> std::ops::BitXor for Later<T>
+    where T: std::ops::BitXor<Output=T>
+{
+    type Output = Later<T>;
+
+    #[inline(always)]
+    fn bitxor(self, rhs: Later<T>) -> Later<T> {
+        Later::new_with_value(self.into_inner().bitxor(rhs.into_inner()))
+    }
+}
+
+impl<T: std::ops::BitXorAssign<T>> std::ops::BitXorAssign for Later<T> {
+    #[inline(always)]
+    fn bitxor_assign(&mut self, rhs: Later<T>) {
+        self.get_mut().bitxor_assign(rhs.into_inner());
+    }
+}
+
+impl<T> std::ops::Deref for Later<T> {
+    type Target = T;
+
+    #[inline(always)]
+    fn deref(&self) -> &T {
+        self.get()
+    }
+}
+
+impl<T> std::ops::DerefMut for Later<T> {
+    #[inline(always)]
+    fn deref_mut(&mut self) -> &mut T {
+        self.get_mut()
+    }
+}
+
+impl<T> std::ops::Div for Later<T>
+    where T: std::ops::Div<Output=T>
+{
+    type Output = Later<T>;
+
+    #[inline(always)]
+    fn div(self, rhs: Later<T>) -> Later<T> {
+        Later::new_with_value(self.into_inner().div(rhs.into_inner()))
+    }
+}
+
+impl<T: std::ops::DivAssign<T>> std::ops::DivAssign for Later<T> {
+    #[inline(always)]
+    fn div_assign(&mut self, rhs: Later<T>) {
+        self.get_mut().div_assign(rhs.into_inner());
+    }
+}
+
+impl<T> std::ops::Index<T> for Later<T>
+    where T: std::ops::Index<T, Output=T>
+{
+    type Output = T;
+
+    fn index(&self, v: T) -> &T {
+        self.get().index(v)
+    }
+}
+
+impl<T> std::ops::Mul for Later<T>
+    where T: std::ops::Mul<Output=T>
+{
+    type Output = Later<T>;
+
+    #[inline(always)]
+    fn mul(self, rhs: Later<T>) -> Later<T> {
+        Later::new_with_value(self.into_inner().mul(rhs.into_inner()))
+    }
+}
+
+impl<T: std::ops::MulAssign<T>> std::ops::MulAssign for Later<T> {
+    #[inline(always)]
+    fn mul_assign(&mut self, rhs: Later<T>) {
+        self.get_mut().mul_assign(rhs.into_inner());
+    }
+}
+
+impl<T> std::ops::Neg for Later<T>
+    where T: std::ops::Neg<Output=T>
+{
+    type Output = Later<T>;
+
+    #[inline(always)]
+    fn neg(self) -> Later<T> {
+        Later::new_with_value(self.into_inner().neg())
+    }
+}
+
+impl<T> std::ops::Not for Later<T>
+    where T: std::ops::Not<Output=T>
+{
+    type Output = Later<T>;
+
+    #[inline(always)]
+    fn not(self) -> Later<T> {
+        Later::new_with_value(self.into_inner().not())
+    }
+}
+
+impl<T> std::ops::Rem for Later<T>
+    where T: std::ops::Rem<Output=T>
+{
+    type Output = Later<T>;
+
+    #[inline(always)]
+    fn rem(self, rhs: Later<T>) -> Later<T> {
+        Later::new_with_value(self.into_inner().rem(rhs.into_inner()))
+    }
+}
+
+impl<T: std::ops::RemAssign<T>> std::ops::RemAssign for Later<T> {
+    #[inline(always)]
+    fn rem_assign(&mut self, rhs: Later<T>) {
+        self.get_mut().rem_assign(rhs.into_inner());
+    }
+}
+
+impl<T> std::ops::Shl<Later<T>> for Later<T>
+    where T: std::ops::Shl<T, Output=T>
+{
+    type Output = Later<T>;
+
+    fn shl(self, rhs: Later<T>) -> Later<T> {
+        Later::new_with_value(self.into_inner().shl(rhs.into_inner()))
+    }
+}
+
+impl<T> std::ops::ShlAssign<Later<T>> for Later<T>
+    where T: std::ops::ShlAssign<T>
+{
+    fn shl_assign(&mut self, rhs: Later<T>) {
+        self.get_mut().shl_assign(rhs.into_inner());
+    }
+}
+
+impl<T> std::ops::Shr<Later<T>> for Later<T>
+    where T: std::ops::Shr<T, Output=T>
+{
+    type Output = Later<T>;
+
+    fn shr(self, rhs: Later<T>) -> Later<T> {
+        Later::new_with_value(self.into_inner().shr(rhs.into_inner()))
+    }
+}
+
+impl<T> std::ops::ShrAssign<Later<T>> for Later<T>
+    where T: std::ops::ShrAssign<T>
+{
+    fn shr_assign(&mut self, rhs: Later<T>) {
+        self.get_mut().shr_assign(rhs.into_inner());
+    }
+}
+
+impl<T> std::ops::Sub for Later<T>
+    where T: std::ops::Sub<Output=T>
+{
+    type Output = Later<T>;
+
+    #[inline(always)]
+    fn sub(self, rhs: Later<T>) -> Later<T> {
+        Later::new_with_value(self.into_inner().sub(rhs.into_inner()))
+    }
+}
+
+impl<T: std::ops::SubAssign<T>> std::ops::SubAssign for Later<T> {
+    #[inline(always)]
+    fn sub_assign(&mut self, rhs: Later<T>) {
+        self.get_mut().sub_assign(rhs.into_inner());
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -409,5 +633,34 @@ mod tests {
         assert!(l2.has_value());
 
         assert_eq!("ab", later!("a".to_owned()).map(|s| s+"b").get());
+    }
+
+
+    #[derive(Debug, PartialEq)]
+    struct Point {
+        x: i32,
+        y: i32,
+    }
+
+    impl std::ops::Add for Point {
+        type Output = Point;
+
+        fn add(self, rhs: Point) -> Point {
+            Point {
+                x: self.x + rhs.x,
+                y: self.y + rhs.y,
+            }
+        }
+    }
+
+    #[test]
+    fn test_operators() {
+        let l1 = later!(Point{x: 1, y: 0});
+        let l2 = later!(Point{x: 2, y: 3});
+        assert_eq!(Point{x: 3, y: 3}, (l1+l2).into_inner());
+        assert_eq!(10, later!(vec![10,2,3])[0]);
+
+        assert_eq!(16, *(later!(4) << later!(2)));
+        assert_eq!(16, 4 << 2);
     }
 }
