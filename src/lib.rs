@@ -1,30 +1,53 @@
-//! [Later](struct.Later.html) owns the result of a lazy computation which
-//! can be accessed via [reference](struct.Later.html#method.get).
-//!
-//! # Example
-//! 
-//! The value `T` of a `Later<T>` is evaluated on first container access
-//! and stored for later use.
-//!
-//! ```rust
-//! #[macro_use]
-//! extern crate later;
-//!
-//! use later::Later;
-//!
-//! fn main() {
-//!     let l: Later<String> = Later::new(|| { 
-//!         println!("hello from closure");
-//!         "foo".to_owned()
-//!     });
-//!     // instead of Later::new the later! macro could be used
-//!
-//!     l.has_value();              // false
-//!     let _a: &String = l.get();  // prints: hello from closure
-//!     l.has_value();              // true
-//!     let _b: &String = l.get();  // does not print anything
-//! }
-//! ```
+/*!
+[Later](struct.Later.html) owns the result of a lazy computation which
+can be accessed via [reference](struct.Later.html#method.get).
+
+# Examples
+
+The value `T` of `Later<T>` is evaluated on first access and
+stored for later use.
+
+```rust
+#[macro_use]
+extern crate later;
+
+use later::Later;
+
+fn main() {
+    let l: Later<String> = Later::new(|| { 
+        println!("hello from closure");
+        "foo".to_owned()
+    });
+    // instead of Later::new the later! macro could be used
+
+    l.has_value();              // false
+    let _a: &String = l.get();  // prints: hello from closure
+    l.has_value();              // true
+    let _b: &String = l.get();  // does not print anything
+}
+```
+
+```rust
+# #[macro_use]
+# extern crate later;
+# use later::Later;
+# fn main() {
+    // the index operator works
+    let l = later!(vec![10, 2]);
+    assert_eq!(10, l[0]);
+
+    // ... the add-assign operator
+    let mut l = later!(95);
+    l += later!(5);
+    assert_eq!(100, *l);
+
+    // ... and many more
+    let l = later!(vec![1, 2]);
+    let a = l.into_iter().map(|v| v*10).collect::<Vec<_>>();
+    assert_eq!(vec![10, 20], a);
+# }
+```
+*/
 
 extern crate lazycell;
 
@@ -611,7 +634,7 @@ mod tests {
 
         assert_eq!(1, later!(1).into_inner());
         println!("{:?}", later!(2));
-        println!("{:?}", {let l = later!(3); l.get(); l}); 
+        println!("{:?}", {let l = later!(3); l.get(); l});
     }
 
     #[test]

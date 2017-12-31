@@ -13,10 +13,10 @@ git = "https://github.com/thibran/later.git"
 tag = "v0.1.0"
 ```
 
-## Example
+## Examples
 
-The value `T` of a `Later<T>` is evaluated on first container access
-and stored for later use.
+The value `T` of `Later<T>` is evaluated on first access and
+stored for later use.
 
 ```rust
 #[macro_use]
@@ -29,13 +29,29 @@ fn main() {
         println!("hello from closure");
         "foo".to_owned()
     });
-    // instead of Later::new the defer! macro could be used
+    // instead of Later::new the later! macro could be used
 
     l.has_value();              // false
     let _a: &String = l.get();  // prints: hello from closure
     l.has_value();              // true
     let _b: &String = l.get();  // does not print anything
 }
+```
+
+```rust
+    // the index operator works
+    let l = later!(vec![10, 2]);
+    assert_eq!(10, l[0]);
+
+    // ... the add-assign operator
+    let mut l = later!(95);
+    l += later!(5);
+    assert_eq!(100, *l);
+
+    // ... and many more
+    let l = later!(vec![1, 2]);
+    let a = l.into_iter().map(|v| v*10).collect::<Vec<_>>();
+    assert_eq!(vec![10, 20], a);
 ```
 
 ## TODO
