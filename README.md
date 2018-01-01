@@ -2,7 +2,7 @@
 
 Later owns the result of a lazy computation which can be accessed via reference.
 
-Version: 0.1.0
+Version: 0.1.1
 
 ## Installation
 
@@ -10,7 +10,7 @@ Add to `Cargo.toml`:
 ```toml
 [dependencies.later]
 git = "https://github.com/thibran/later.git"
-tag = "v0.1.0"
+tag = "v0.1.1"
 ```
 
 ## Examples
@@ -60,3 +60,4 @@ fn main() {
 * Write documentation
 * Optional integration with Futures create
 * add std::ops::Fn
+* impl traits for [T; n]

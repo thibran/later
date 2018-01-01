@@ -66,6 +66,17 @@ pub struct Later<T> {
     f:    Box<Fn() -> T>,
 }
 
+/// Implement for your own type to be able to unwrap a Later<T>.
+pub trait Failable {
+    type Output;
+
+    fn unwrap(self) -> Self::Output;
+    fn unwrap_or<I>(self, fallback: Self::Output) -> Self::Output
+        where I: Into<Self::Output>;
+    fn unwrap_or_later(self, later: Later<Self::Output>) -> Self::Output;
+    fn expect<S: AsRef<str>>(self, msg: S) -> Self::Output;
+}
+
 impl<T> Later<T> {
     pub fn new<F>(f: F) -> Later<T>
         where F: Fn() -> T + 'static
@@ -159,6 +170,58 @@ impl<T> Later<T> {
 
 
 //-------------------------  Traits  -------------------------//
+
+impl<T> Failable for Later<Option<T>> {
+    type Output = T;
+
+    #[inline(always)]
+    fn unwrap(self) -> T {
+        self.into_inner().unwrap()
+    }
+
+    #[inline(always)]
+    fn unwrap_or<I>(self, fallback: T) -> T
+        where I: Into<T>
+    {
+        self.into_inner().unwrap_or(fallback.into())
+    }
+
+    #[inline(always)]
+    fn unwrap_or_later(self, later: Later<T>) -> T {
+        self.into_inner().unwrap_or(later.into_inner())
+    }
+
+    #[inline(always)]
+    fn expect<S: AsRef<str>>(self, msg: S) -> T {
+        self.into_inner().expect(msg.as_ref())
+    }
+}
+
+impl<T, E: std::fmt::Debug> Failable for Later<Result<T, E>> {
+    type Output = T;
+
+    #[inline(always)]
+    fn unwrap(self) -> T {
+        self.into_inner().unwrap()
+    }
+
+    #[inline(always)]
+    fn unwrap_or<I>(self, fallback: T) -> T
+        where I: Into<T>
+    {
+        self.into_inner().unwrap_or(fallback.into())
+    }
+
+    #[inline(always)]
+    fn unwrap_or_later(self, later: Later<T>) -> T {
+        self.into_inner().unwrap_or(later.into_inner())
+    }
+
+    #[inline(always)]
+    fn expect<S: AsRef<str>>(self, msg: S) -> T {
+        self.into_inner().expect(msg.as_ref())
+    }
+}
 
 impl<T> std::convert::AsRef<Later<T>> for Later<T> {
     #[inline(always)]
@@ -643,10 +706,19 @@ mod tests {
         assert_eq!(1, later!(1).into_inner());
         println!("{:?}", later!(2));
         println!("{:?}", {let l = later!(3); l.get(); l});
+
+        assert_eq!(2, later!(Some(2)).unwrap());
     }
 
     #[test]
-    fn test_map() {
+    fn unwrap_or_later() {
+        let fallack = later!(5);
+        assert_eq!(5, later!(None).unwrap_or_later(fallack));
+        assert_eq!(3, later!(Some(3)).unwrap());
+    }
+
+    #[test]
+    fn map() {
         let l1 = later!({
             println!("first");
             100
@@ -666,26 +738,25 @@ mod tests {
         assert_eq!("ab", later!("a".to_owned()).map(|s| s+"b").get());
     }
 
-
-    #[derive(Debug, PartialEq)]
-    struct Point {
-        x: i32,
-        y: i32,
-    }
-
-    impl std::ops::Add for Point {
-        type Output = Point;
-
-        fn add(self, rhs: Point) -> Point {
-            Point {
-                x: self.x + rhs.x,
-                y: self.y + rhs.y,
-            }
-        }
-    }
-
     #[test]
     fn test_operators() {
+        #[derive(Debug, PartialEq)]
+        struct Point {
+            x: i32,
+            y: i32,
+        }
+
+        impl std::ops::Add for Point {
+            type Output = Point;
+
+            fn add(self, rhs: Point) -> Point {
+                Point {
+                    x: self.x + rhs.x,
+                    y: self.y + rhs.y,
+                }
+            }
+        }
+
         let l1 = later!(Point{x: 1, y: 0});
         let l2 = later!(Point{x: 2, y: 3});
         assert_eq!(Point{x: 3, y: 3}, (l1+l2).into_inner());
