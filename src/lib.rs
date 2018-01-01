@@ -203,6 +203,14 @@ impl<T> std::fmt::Display for Later<T>
     }
 }
 
+impl<T> std::cmp::PartialEq for Later<T>
+    where T: std::cmp::PartialEq<T>
+{
+    fn eq(&self, rhs: &Later<T>) -> bool {
+        self.get().eq(rhs.get())
+    }
+}
+
 
 //-------------------------  Into Traits  -------------------------//
 
