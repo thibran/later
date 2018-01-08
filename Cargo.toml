@@ -1,6 +1,6 @@
 [package]
 name = "later"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Thibaut Brandscheid <randaltor@web.de>"]
 description = "Later owns the result of a lazy computation which can be accessed via reference."
 license = "BSD 2-Clause"

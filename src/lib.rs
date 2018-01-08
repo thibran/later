@@ -1,6 +1,7 @@
 /*!
 [Later](struct.Later.html) owns the result of a lazy computation which
-can be accessed via [reference](struct.Later.html#method.get).
+can be accessed via [reference](struct.Later.html#method.get).  
+Works on stable Rust.
 
 # Examples
 
@@ -18,12 +19,11 @@ fn main() {
         println!("hello from closure");
         "foo".to_owned()
     });
-    // instead of Later::new the later! macro could be used
 
-    l.has_value();              // false
-    let _a: &String = l.get();  // prints: hello from closure
-    l.has_value();              // true
-    let _b: &String = l.get();  // does not print anything
+    l.has_value();             // false
+    let a: &String = l.get();  // prints: hello from closure
+    l.has_value();             // true
+    let b: &String = l.get();  // does not print anything
 }
 ```
 
@@ -36,15 +36,15 @@ fn main() {
     let l = later!(vec![10, 2]);
     assert_eq!(10, l[0]);
 
-    // ... the add-assign operator
+    // ... add-assign
     let mut l = later!(95);
     l += later!(5);
     assert_eq!(100, *l);
 
-    // ... and many more
-    let l = later!(vec![1, 2]);
-    let a = l.into_iter().map(|v| v*10).collect::<Vec<_>>();
-    assert_eq!(vec![10, 20], a);
+    // ... into_iter() and many more
+    let a: Vec<u32> = later!(vec![1, 2])
+            .into_iter()
+            .map(|n| n*10).collect();
 # }
 ```
 */
@@ -66,7 +66,7 @@ pub struct Later<T> {
     f:    Box<Fn() -> T>,
 }
 
-/// Implement for your own type to be able to unwrap a Later<T>.
+/// Unwrap methods for the Later wrapper.
 pub trait Failable {
     type Output;
 
@@ -87,7 +87,7 @@ impl<T> Later<T> {
         }
     }
 
-    fn new_with_value(val: T) -> Later<T> {
+    fn with_value(val: T) -> Later<T> {
         let cell = LazyCell::new();
         let _ = cell.fill(val);
         Later {
@@ -149,8 +149,8 @@ impl<T> Later<T> {
         self.get().clone()
     }
 
-    /// Caution: If deferred value has been computed, map needs
-    /// to clone it to create a new Later<T> object!
+    /// Caution: If deferred value has been computed, the value
+    /// is cloned to create a new Later<T> object!
     pub fn map<F, U>(self, f: F) -> Later<U>
         where F: Fn(T) -> U + 'static,
               T: Clone      + 'static  // TODO get rid of Clone
@@ -477,7 +477,7 @@ impl<T> std::ops::Add for Later<T>
 
     #[inline(always)]
     fn add(self, rhs: Later<T>) -> Later<T> {
-        Later::new_with_value(self.into_inner().add(rhs.into_inner()))
+        Later::with_value(self.into_inner().add(rhs.into_inner()))
     }
 }
 
@@ -495,7 +495,7 @@ impl<T> std::ops::BitAnd for Later<T>
 
     #[inline(always)]
     fn bitand(self, rhs: Later<T>) -> Later<T> {
-        Later::new_with_value(self.into_inner().bitand(rhs.into_inner()))
+        Later::with_value(self.into_inner().bitand(rhs.into_inner()))
     }
 }
 
@@ -513,7 +513,7 @@ impl<T> std::ops::BitOr for Later<T>
 
     #[inline(always)]
     fn bitor(self, rhs: Later<T>) -> Later<T> {
-        Later::new_with_value(self.into_inner().bitor(rhs.into_inner()))
+        Later::with_value(self.into_inner().bitor(rhs.into_inner()))
     }
 }
 
@@ -531,7 +531,7 @@ impl<T> std::ops::BitXor for Later<T>
 
     #[inline(always)]
     fn bitxor(self, rhs: Later<T>) -> Later<T> {
-        Later::new_with_value(self.into_inner().bitxor(rhs.into_inner()))
+        Later::with_value(self.into_inner().bitxor(rhs.into_inner()))
     }
 }
 
@@ -565,7 +565,7 @@ impl<T> std::ops::Div for Later<T>
 
     #[inline(always)]
     fn div(self, rhs: Later<T>) -> Later<T> {
-        Later::new_with_value(self.into_inner().div(rhs.into_inner()))
+        Later::with_value(self.into_inner().div(rhs.into_inner()))
     }
 }
 
@@ -593,7 +593,7 @@ impl<T> std::ops::Mul for Later<T>
 
     #[inline(always)]
     fn mul(self, rhs: Later<T>) -> Later<T> {
-        Later::new_with_value(self.into_inner().mul(rhs.into_inner()))
+        Later::with_value(self.into_inner().mul(rhs.into_inner()))
     }
 }
 
@@ -611,7 +611,7 @@ impl<T> std::ops::Neg for Later<T>
 
     #[inline(always)]
     fn neg(self) -> Later<T> {
-        Later::new_with_value(self.into_inner().neg())
+        Later::with_value(self.into_inner().neg())
     }
 }
 
@@ -622,7 +622,7 @@ impl<T> std::ops::Not for Later<T>
 
     #[inline(always)]
     fn not(self) -> Later<T> {
-        Later::new_with_value(self.into_inner().not())
+        Later::with_value(self.into_inner().not())
     }
 }
 
@@ -633,7 +633,7 @@ impl<T> std::ops::Rem for Later<T>
 
     #[inline(always)]
     fn rem(self, rhs: Later<T>) -> Later<T> {
-        Later::new_with_value(self.into_inner().rem(rhs.into_inner()))
+        Later::with_value(self.into_inner().rem(rhs.into_inner()))
     }
 }
 
@@ -650,7 +650,7 @@ impl<T> std::ops::Shl<Later<T>> for Later<T>
     type Output = Later<T>;
 
     fn shl(self, rhs: Later<T>) -> Later<T> {
-        Later::new_with_value(self.into_inner().shl(rhs.into_inner()))
+        Later::with_value(self.into_inner().shl(rhs.into_inner()))
     }
 }
 
@@ -668,7 +668,7 @@ impl<T> std::ops::Shr<Later<T>> for Later<T>
     type Output = Later<T>;
 
     fn shr(self, rhs: Later<T>) -> Later<T> {
-        Later::new_with_value(self.into_inner().shr(rhs.into_inner()))
+        Later::with_value(self.into_inner().shr(rhs.into_inner()))
     }
 }
 
@@ -687,7 +687,7 @@ impl<T> std::ops::Sub for Later<T>
 
     #[inline(always)]
     fn sub(self, rhs: Later<T>) -> Later<T> {
-        Later::new_with_value(self.into_inner().sub(rhs.into_inner()))
+        Later::with_value(self.into_inner().sub(rhs.into_inner()))
     }
 }
 
@@ -699,12 +699,47 @@ impl<T: std::ops::SubAssign<T>> std::ops::SubAssign for Later<T> {
 }
 
 
+//-------------------------  Binary Number Types  -------------------------//
+
+impl<T> std::fmt::UpperHex for Later<T>
+    where T: std::fmt::UpperHex 
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        self.get().fmt(f)
+    }
+}
+
+impl<T> std::fmt::LowerHex for Later<T>
+    where T: std::fmt::LowerHex 
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        self.get().fmt(f)
+    }
+}
+
+impl<T> std::fmt::Octal for Later<T>
+    where T: std::fmt::Octal 
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        self.get().fmt(f)
+    }
+}
+
+impl<T> std::fmt::Binary for Later<T>
+    where T: std::fmt::Binary 
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        self.get().fmt(f)
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_later() {
+    fn later() {
         let l = Later::new(|| "abc".to_owned());
         assert!(! l.has_value());
         assert_eq!("abc", l.get());
@@ -747,7 +782,7 @@ mod tests {
     }
 
     #[test]
-    fn test_operators() {
+    fn operators() {
         #[derive(Debug, PartialEq)]
         struct Point {
             x: i32,
