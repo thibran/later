@@ -242,6 +242,14 @@ impl<T> std::iter::IntoIterator for Later<T>
     }
 }
 
+impl<T, A> Extend<A> for Later<T>
+    where T: Extend<A>
+{
+    fn extend<Y>(&mut self, iter: Y) where Y: IntoIterator<Item = A> {
+        self.get_mut().extend(iter)
+    }
+}
+
 impl<T> std::fmt::Debug for Later<T>
     where T: std::fmt::Debug
 {
