@@ -49,8 +49,16 @@ fn main() {
 ```
 */
 
-extern crate lazycell;
+#[cfg(feature = "arrayvec")]
+extern crate arrayvec;
+#[cfg(feature = "either")]
+extern crate either;
+#[cfg(feature = "fixedbitset")]
+extern crate fixedbitset;
+#[cfg(feature = "petgraph")]
+extern crate petgraph;
 
+extern crate lazycell;
 use lazycell::LazyCell;
 
 #[macro_export]
@@ -314,6 +322,64 @@ impl Into<std::path::PathBuf> for Later<std::path::PathBuf> {
 
 impl<T> Into<Vec<T>> for Later<Vec<T>> {
     fn into(self) -> Vec<T> {
+        self.into_inner()
+    }
+}
+
+#[cfg(feature = "arrayvec")]
+impl<T> Into<arrayvec::ArrayVec<T>> for Later<arrayvec::ArrayVec<T>>
+    where T: arrayvec::Array
+{
+    fn into(self) -> arrayvec::ArrayVec<T> {
+        self.into_inner()
+    }
+}
+
+#[cfg(feature = "arrayvec")]
+impl<T> Into<arrayvec::ArrayString<T>> for Later<arrayvec::ArrayString<T>>
+    where T: arrayvec::Array<Item = u8> {
+    fn into(self) -> arrayvec::ArrayString<T> {
+        self.into_inner()
+    }
+}
+
+#[cfg(feature = "either")]
+impl<L, R> Into<either::Either<L, R>> for Later<either::Either<L, R>> {
+    fn into(self) -> either::Either<L, R> {
+        self.into_inner()
+    }
+}
+
+#[cfg(feature = "fixedbitset")]
+impl Into<fixedbitset::FixedBitSet> for Later<fixedbitset::FixedBitSet> {
+    fn into(self) -> fixedbitset::FixedBitSet {
+        self.into_inner()
+    }
+}
+
+#[cfg(feature = "petgraph")]
+impl<N, E, Ty, Ix> Into<petgraph::Graph<N, E, Ty, Ix>>
+    for Later<petgraph::Graph<N, E, Ty, Ix>>
+{
+    fn into(self) -> petgraph::Graph<N, E, Ty, Ix> {
+        self.into_inner()
+    }
+}
+
+#[cfg(feature = "petgraph")]
+impl<N, E, Ty, Ix> Into<petgraph::stable_graph::StableGraph<N, E, Ty, Ix>>
+    for Later<petgraph::stable_graph::StableGraph<N, E, Ty, Ix>>
+{
+    fn into(self) -> petgraph::stable_graph::StableGraph<N, E, Ty, Ix> {
+        self.into_inner()
+    }
+}
+
+#[cfg(feature = "petgraph")]
+impl<N, E, Ty> Into<petgraph::graphmap::GraphMap<N, E, Ty>>
+    for Later<petgraph::graphmap::GraphMap<N, E, Ty>>
+{
+    fn into(self) -> petgraph::graphmap::GraphMap<N, E, Ty> {
         self.into_inner()
     }
 }

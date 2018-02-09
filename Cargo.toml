@@ -8,4 +8,8 @@ categories = ["data-structures", "rust-patterns"]
 readme = "README.md"
 
 [dependencies]
-lazycell = "0.6.0"
+lazycell    = "0.6.0"
+arrayvec    = { version = "*", optional = true }
+either      = { version = "*", optional = true }
+fixedbitset = { version = "*", optional = true }
+petgraph    = { version = "*", optional = true }
