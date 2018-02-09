@@ -108,24 +108,22 @@ impl<T> Later<T> {
     /// If value has not been computed,
     /// return default otherwise the computation. 
     pub fn get_or_default(&self) -> &T where T: Default {
-        match self.cell.filled() {
-            true => self.get(),
-            _    => {
-                let _ = self.cell.fill(T::default());
-                self.get()
-            },
+        if self.cell.filled() {
+            self.get()
+        } else {
+            let _ = self.cell.fill(T::default());
+            self.get()
         }
     }
 
     /// If value has not been computed,
     /// return default otherwise the computation. 
     pub fn get_mut_or_default(&mut self) -> &mut T where T: Default {
-        match self.cell.filled() {
-            true => self.cell.borrow_mut().unwrap(),
-            _    => {
-                let _ = self.cell.fill(T::default());
-                self.cell.borrow_mut().unwrap()
-            },
+        if self.cell.filled() {
+            self.cell.borrow_mut().unwrap()
+        } else {
+            let _ = self.cell.fill(T::default());
+            self.cell.borrow_mut().unwrap()
         }
     }
 
@@ -155,15 +153,16 @@ impl<T> Later<T> {
         where F: Fn(T) -> U + 'static,
               T: Clone      + 'static  // TODO get rid of Clone
     {
-        match self.cell.filled() {
-            true => Later {
+        if self.cell.filled() {
+            Later {
                 cell: LazyCell::new(),
                 f: Box::new(move || f(self.get().clone())),
-            },
-            _ => Later {
+            }
+        } else {
+            Later {
                 cell: LazyCell::new(),
                 f: Box::new(move || f((self.f)())),
-            },
+            }
         }
     }
 }
@@ -174,24 +173,20 @@ impl<T> Later<T> {
 impl<T> Failable for Later<Option<T>> {
     type Output = T;
 
-    #[inline(always)]
     fn unwrap(self) -> T {
         self.into_inner().unwrap()
     }
 
-    #[inline(always)]
     fn unwrap_or<I>(self, fallback: T) -> T
         where I: Into<T>
     {
-        self.into_inner().unwrap_or(fallback.into())
+        self.into_inner().unwrap_or_else(|| fallback)
     }
 
-    #[inline(always)]
     fn unwrap_or_later(self, later: Later<T>) -> T {
-        self.into_inner().unwrap_or(later.into_inner())
+        self.into_inner().unwrap_or_else(|| later.into_inner())
     }
 
-    #[inline(always)]
     fn expect<S: AsRef<str>>(self, msg: S) -> T {
         self.into_inner().expect(msg.as_ref())
     }
@@ -200,31 +195,26 @@ impl<T> Failable for Later<Option<T>> {
 impl<T, E: std::fmt::Debug> Failable for Later<Result<T, E>> {
     type Output = T;
 
-    #[inline(always)]
     fn unwrap(self) -> T {
         self.into_inner().unwrap()
     }
 
-    #[inline(always)]
     fn unwrap_or<I>(self, fallback: T) -> T
         where I: Into<T>
     {
-        self.into_inner().unwrap_or(fallback.into())
+        self.into_inner().unwrap_or_else(|_| fallback)
     }
 
-    #[inline(always)]
     fn unwrap_or_later(self, later: Later<T>) -> T {
-        self.into_inner().unwrap_or(later.into_inner())
+        self.into_inner().unwrap_or_else(|_| later.into_inner())
     }
 
-    #[inline(always)]
     fn expect<S: AsRef<str>>(self, msg: S) -> T {
         self.into_inner().expect(msg.as_ref())
     }
 }
 
 impl<T> std::convert::AsRef<Later<T>> for Later<T> {
-    #[inline(always)]
     fn as_ref(&self) -> &Later<T> {
         &self
     }
@@ -236,7 +226,6 @@ impl<T> std::iter::IntoIterator for Later<T>
     type Item = T::Item;
     type IntoIter = <T as std::iter::IntoIterator>::IntoIter;
 
-    #[inline(always)]
     fn into_iter(self) -> Self::IntoIter {
         self.into_inner().into_iter()
     }
@@ -253,11 +242,11 @@ impl<T, A> Extend<A> for Later<T>
 impl<T> std::fmt::Debug for Later<T>
     where T: std::fmt::Debug
 {
-    #[inline(always)]
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self.cell.filled() {
-            true => write!(f, "Later {{ computed: true, value: {:?} }}", self.get()),
-            _    => write!(f, "Later {{ computed: false, value: unknown }}"),
+        if self.cell.filled() {
+            write!(f, "Later {{ computed: true, value: {:?} }}", self.get())
+        } else {
+            write!(f, "Later {{ computed: false, value: unknown }}")
         }
     }
 }
@@ -265,11 +254,11 @@ impl<T> std::fmt::Debug for Later<T>
 impl<T> std::fmt::Display for Later<T>
     where T: std::fmt::Display
 {
-    #[inline(always)]
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self.cell.filled() {
-            true => write!(f, "(computed: true, value: {})", self.get()),
-            _    => write!(f, "(computed: false, value: unknown)"),
+        if self.cell.filled() {
+            write!(f, "(computed: true, value: {})", self.get())
+        } else {
+            write!(f, "(computed: false, value: unknown)")
         }
     }
 }
@@ -286,35 +275,30 @@ impl<T> std::cmp::PartialEq for Later<T>
 //-------------------------  Into Traits  -------------------------//
 
 impl<T> Into<Option<T>> for Later<Option<T>> {
-    #[inline(always)]
     fn into(self) -> Option<T> {
         self.into_inner()
     }
 }
 
 impl<T, E> Into<Result<T, E>> for Later<Result<T, E>> {
-    #[inline(always)]
     fn into(self) -> Result<T, E> {
         self.into_inner()
     }
 }
 
 impl Into<String> for Later<String> {
-    #[inline(always)]
     fn into(self) -> String {
         self.into_inner()
     }
 }
 
 impl Into<std::path::PathBuf> for Later<std::path::PathBuf> {
-    #[inline(always)]
     fn into(self) -> std::path::PathBuf {
         self.into_inner()
     }
 }
 
 impl<T> Into<Vec<T>> for Later<Vec<T>> {
-    #[inline(always)]
     fn into(self) -> Vec<T> {
         self.into_inner()
     }
@@ -323,7 +307,6 @@ impl<T> Into<Vec<T>> for Later<Vec<T>> {
 impl<K, V, S> Into<std::collections::HashMap<K, V, S>> for
     Later<std::collections::HashMap<K, V, S>>
 {
-    #[inline(always)]
     fn into(self) -> std::collections::HashMap<K, V, S> {
         self.into_inner()
     }
@@ -332,7 +315,6 @@ impl<K, V, S> Into<std::collections::HashMap<K, V, S>> for
 impl<T, S> Into<std::collections::HashSet<T, S>> for
     Later<std::collections::HashSet<T, S>>
 {
-    #[inline(always)]
     fn into(self) -> std::collections::HashSet<T, S> {
         self.into_inner()
     }
@@ -341,7 +323,6 @@ impl<T, S> Into<std::collections::HashSet<T, S>> for
 impl<T> Into<std::collections::LinkedList<T>> for
     Later<std::collections::LinkedList<T>>
 {
-    #[inline(always)]
     fn into(self) -> std::collections::LinkedList<T> {
         self.into_inner()
     }
@@ -350,7 +331,6 @@ impl<T> Into<std::collections::LinkedList<T>> for
 impl<T> Into<std::collections::VecDeque<T>> for
     Later<std::collections::VecDeque<T>>
 {
-    #[inline(always)]
     fn into(self) -> std::collections::VecDeque<T> {
         self.into_inner()
     }
@@ -359,7 +339,6 @@ impl<T> Into<std::collections::VecDeque<T>> for
 impl<K, V> Into<std::collections::BTreeMap<K, V>> for
     Later<std::collections::BTreeMap<K, V>>
 {
-    #[inline(always)]
     fn into(self) -> std::collections::BTreeMap<K, V> {
         self.into_inner()
     }
@@ -368,7 +347,6 @@ impl<K, V> Into<std::collections::BTreeMap<K, V>> for
 impl<T> Into<std::collections::BTreeSet<T>> for
     Later<std::collections::BTreeSet<T>>
 {
-    #[inline(always)]
     fn into(self) -> std::collections::BTreeSet<T> {
         self.into_inner()
     }
@@ -377,91 +355,78 @@ impl<T> Into<std::collections::BTreeSet<T>> for
 impl<T> Into<std::collections::BinaryHeap<T>> for
     Later<std::collections::BinaryHeap<T>>
 {
-    #[inline(always)]
     fn into(self) -> std::collections::BinaryHeap<T> {
         self.into_inner()
     }
 }
 
 impl Into<i8> for Later<i8> {
-    #[inline(always)]
     fn into(self) -> i8 {
         self.into_inner()
     }
 }
 
 impl Into<i16> for Later<i16> {
-    #[inline(always)]
     fn into(self) -> i16 {
         self.into_inner()
     }
 }
 
 impl Into<i32> for Later<i32> {
-    #[inline(always)]
     fn into(self) -> i32 {
         self.into_inner()
     }
 }
 
 impl Into<i64> for Later<i64> {
-    #[inline(always)]
     fn into(self) -> i64 {
         self.into_inner()
     }
 }
 
 impl Into<u8> for Later<u8> {
-    #[inline(always)]
     fn into(self) -> u8 {
         self.into_inner()
     }
 }
 
 impl Into<u16> for Later<u16> {
-    #[inline(always)]
     fn into(self) -> u16 {
         self.into_inner()
     }
 }
 
 impl Into<u32> for Later<u32> {
-    #[inline(always)]
     fn into(self) -> u32 {
         self.into_inner()
     }
 }
 
 impl Into<u64> for Later<u64> {
-    #[inline(always)]
     fn into(self) -> u64 {
         self.into_inner()
     }
 }
 
 impl Into<isize> for Later<isize> {
-    #[inline(always)]
     fn into(self) -> isize {
         self.into_inner()
     }
 }
 
 impl Into<usize> for Later<usize> {
-    #[inline(always)]
     fn into(self) -> usize {
         self.into_inner()
     }
 }
 
 impl Into<f32> for Later<f32> {
-    #[inline(always)]
     fn into(self) -> f32 {
         self.into_inner()
     }
 }
 
 impl Into<f64> for Later<f64> {
-    #[inline(always)]
     fn into(self) -> f64 {
         self.into_inner()
     }
@@ -475,14 +440,12 @@ impl<T> std::ops::Add for Later<T>
 {
     type Output = Later<T>;
 
-    #[inline(always)]
     fn add(self, rhs: Later<T>) -> Later<T> {
         Later::with_value(self.into_inner().add(rhs.into_inner()))
     }
 }
 
 impl<T: std::ops::AddAssign<T>> std::ops::AddAssign for Later<T> {
-    #[inline(always)]
     fn add_assign(&mut self, rhs: Later<T>) {
         self.get_mut().add_assign(rhs.into_inner());
     }
@@ -493,14 +456,12 @@ impl<T> std::ops::BitAnd for Later<T>
 {
     type Output = Later<T>;
 
-    #[inline(always)]
     fn bitand(self, rhs: Later<T>) -> Later<T> {
         Later::with_value(self.into_inner().bitand(rhs.into_inner()))
     }
 }
 
 impl<T: std::ops::BitAndAssign<T>> std::ops::BitAndAssign for Later<T> {
-    #[inline(always)]
     fn bitand_assign(&mut self, rhs: Later<T>) {
         self.get_mut().bitand_assign(rhs.into_inner());
     }
@@ -511,14 +472,12 @@ impl<T> std::ops::BitOr for Later<T>
 {
     type Output = Later<T>;
 
-    #[inline(always)]
     fn bitor(self, rhs: Later<T>) -> Later<T> {
         Later::with_value(self.into_inner().bitor(rhs.into_inner()))
     }
 }
 
 impl<T: std::ops::BitOrAssign<T>> std::ops::BitOrAssign for Later<T> {
-    #[inline(always)]
     fn bitor_assign(&mut self, rhs: Later<T>) {
         self.get_mut().bitor_assign(rhs.into_inner());
     }
@@ -529,14 +488,12 @@ impl<T> std::ops::BitXor for Later<T>
 {
     type Output = Later<T>;
 
-    #[inline(always)]
     fn bitxor(self, rhs: Later<T>) -> Later<T> {
         Later::with_value(self.into_inner().bitxor(rhs.into_inner()))
     }
 }
 
 impl<T: std::ops::BitXorAssign<T>> std::ops::BitXorAssign for Later<T> {
-    #[inline(always)]
     fn bitxor_assign(&mut self, rhs: Later<T>) {
         self.get_mut().bitxor_assign(rhs.into_inner());
     }
@@ -545,14 +502,12 @@ impl<T: std::ops::BitXorAssign<T>> std::ops::BitXorAssign for Later<T> {
 impl<T> std::ops::Deref for Later<T> {
     type Target = T;
 
-    #[inline(always)]
     fn deref(&self) -> &T {
         self.get()
     }
 }
 
 impl<T> std::ops::DerefMut for Later<T> {
-    #[inline(always)]
     fn deref_mut(&mut self) -> &mut T {
         self.get_mut()
     }
@@ -563,14 +518,12 @@ impl<T> std::ops::Div for Later<T>
 {
     type Output = Later<T>;
 
-    #[inline(always)]
     fn div(self, rhs: Later<T>) -> Later<T> {
         Later::with_value(self.into_inner().div(rhs.into_inner()))
     }
 }
 
 impl<T: std::ops::DivAssign<T>> std::ops::DivAssign for Later<T> {
-    #[inline(always)]
     fn div_assign(&mut self, rhs: Later<T>) {
         self.get_mut().div_assign(rhs.into_inner());
     }
@@ -591,14 +544,12 @@ impl<T> std::ops::Mul for Later<T>
 {
     type Output = Later<T>;
 
-    #[inline(always)]
     fn mul(self, rhs: Later<T>) -> Later<T> {
         Later::with_value(self.into_inner().mul(rhs.into_inner()))
     }
 }
 
 impl<T: std::ops::MulAssign<T>> std::ops::MulAssign for Later<T> {
-    #[inline(always)]
     fn mul_assign(&mut self, rhs: Later<T>) {
         self.get_mut().mul_assign(rhs.into_inner());
     }
@@ -609,7 +560,6 @@ impl<T> std::ops::Neg for Later<T>
 {
     type Output = Later<T>;
 
-    #[inline(always)]
     fn neg(self) -> Later<T> {
         Later::with_value(self.into_inner().neg())
     }
@@ -620,7 +570,6 @@ impl<T> std::ops::Not for Later<T>
 {
     type Output = Later<T>;
 
-    #[inline(always)]
     fn not(self) -> Later<T> {
         Later::with_value(self.into_inner().not())
     }
@@ -631,14 +580,12 @@ impl<T> std::ops::Rem for Later<T>
 {
     type Output = Later<T>;
 
-    #[inline(always)]
     fn rem(self, rhs: Later<T>) -> Later<T> {
         Later::with_value(self.into_inner().rem(rhs.into_inner()))
     }
 }
 
 impl<T: std::ops::RemAssign<T>> std::ops::RemAssign for Later<T> {
-    #[inline(always)]
     fn rem_assign(&mut self, rhs: Later<T>) {
         self.get_mut().rem_assign(rhs.into_inner());
     }
@@ -685,14 +632,12 @@ impl<T> std::ops::Sub for Later<T>
 {
     type Output = Later<T>;
 
-    #[inline(always)]
     fn sub(self, rhs: Later<T>) -> Later<T> {
         Later::with_value(self.into_inner().sub(rhs.into_inner()))
     }
 }
 
 impl<T: std::ops::SubAssign<T>> std::ops::SubAssign for Later<T> {
-    #[inline(always)]
     fn sub_assign(&mut self, rhs: Later<T>) {
         self.get_mut().sub_assign(rhs.into_inner());
     }
