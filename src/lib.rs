@@ -73,6 +73,8 @@ pub trait Failable {
     fn unwrap(self) -> Self::Output;
     fn unwrap_or<I>(self, fallback: Self::Output) -> Self::Output
         where I: Into<Self::Output>;
+    fn unwrap_or_else<F>(self, f: F) -> Self::Output
+        where F: FnOnce() -> Self::Output;
     fn unwrap_or_later(self, later: Later<Self::Output>) -> Self::Output;
     fn expect<S: AsRef<str>>(self, msg: S) -> Self::Output;
 }
@@ -183,6 +185,12 @@ impl<T> Failable for Later<Option<T>> {
         self.into_inner().unwrap_or_else(|| fallback)
     }
 
+    fn unwrap_or_else<F>(self, f: F) -> Self::Output
+        where F: FnOnce() -> Self::Output
+    {
+        self.into_inner().unwrap_or_else(f)
+    }
+
     fn unwrap_or_later(self, later: Later<T>) -> T {
         self.into_inner().unwrap_or_else(|| later.into_inner())
     }
@@ -203,6 +211,12 @@ impl<T, E: std::fmt::Debug> Failable for Later<Result<T, E>> {
         where I: Into<T>
     {
         self.into_inner().unwrap_or_else(|_| fallback)
+    }
+
+    fn unwrap_or_else<F>(self, f: F) -> Self::Output
+        where F: FnOnce() -> Self::Output
+    {
+        self.into_inner().unwrap_or_else(|_| f())
     }
 
     fn unwrap_or_later(self, later: Later<T>) -> T {
