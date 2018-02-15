@@ -68,10 +68,9 @@ macro_rules! later {
     }
 }
 
-
 pub struct Later<T> {
     cell: LazyCell<T>,
-    f:    Box<Fn() -> T>,
+    f: Box<Fn() -> T>,
 }
 
 /// Unwrap methods for the Later wrapper.
@@ -80,16 +79,19 @@ pub trait Failable {
 
     fn unwrap(self) -> Self::Output;
     fn unwrap_or<I>(self, fallback: Self::Output) -> Self::Output
-        where I: Into<Self::Output>;
+    where
+        I: Into<Self::Output>;
     fn unwrap_or_else<F>(self, f: F) -> Self::Output
-        where F: FnOnce() -> Self::Output;
+    where
+        F: FnOnce() -> Self::Output;
     fn unwrap_or_later(self, later: Later<Self::Output>) -> Self::Output;
     fn expect<S: AsRef<str>>(self, msg: S) -> Self::Output;
 }
 
 impl<T> Later<T> {
     pub fn new<F>(f: F) -> Later<T>
-        where F: Fn() -> T + 'static
+    where
+        F: Fn() -> T + 'static,
     {
         Later {
             cell: LazyCell::new(),
@@ -116,8 +118,11 @@ impl<T> Later<T> {
     }
 
     /// If value has not been computed,
-    /// return default otherwise the computation. 
-    pub fn get_or_default(&self) -> &T where T: Default {
+    /// return default otherwise the computation.
+    pub fn get_or_default(&self) -> &T
+    where
+        T: Default,
+    {
         if self.cell.filled() {
             self.get()
         } else {
@@ -127,8 +132,11 @@ impl<T> Later<T> {
     }
 
     /// If value has not been computed,
-    /// return default otherwise the computation. 
-    pub fn get_mut_or_default(&mut self) -> &mut T where T: Default {
+    /// return default otherwise the computation.
+    pub fn get_mut_or_default(&mut self) -> &mut T
+    where
+        T: Default,
+    {
         if self.cell.filled() {
             self.cell.borrow_mut().unwrap()
         } else {
@@ -138,7 +146,7 @@ impl<T> Later<T> {
     }
 
     fn initialize_if_empty(&self) {
-        if ! self.cell.filled() {
+        if !self.cell.filled() {
             self.get();
         }
     }
@@ -152,7 +160,10 @@ impl<T> Later<T> {
         self.cell.into_inner().unwrap() // is save, value must be present
     }
 
-    pub fn clone_inner(&self) -> T where T: Clone {
+    pub fn clone_inner(&self) -> T
+    where
+        T: Clone,
+    {
         self.initialize_if_empty();
         self.get().clone()
     }
@@ -160,8 +171,9 @@ impl<T> Later<T> {
     /// Caution: If deferred value has been computed, the value
     /// is cloned to create a new Later<T> object!
     pub fn map<F, U>(self, f: F) -> Later<U>
-        where F: Fn(T) -> U + 'static,
-              T: Clone      + 'static  // TODO get rid of Clone
+    where
+        F: Fn(T) -> U + 'static,
+        T: Clone + 'static, // TODO get rid of Clone
     {
         if self.cell.filled() {
             Later {
@@ -177,7 +189,6 @@ impl<T> Later<T> {
     }
 }
 
-
 //-------------------------  Traits  -------------------------//
 
 impl<T> Failable for Later<Option<T>> {
@@ -188,13 +199,15 @@ impl<T> Failable for Later<Option<T>> {
     }
 
     fn unwrap_or<I>(self, fallback: T) -> T
-        where I: Into<T>
+    where
+        I: Into<T>,
     {
         self.into_inner().unwrap_or_else(|| fallback)
     }
 
     fn unwrap_or_else<F>(self, f: F) -> Self::Output
-        where F: FnOnce() -> Self::Output
+    where
+        F: FnOnce() -> Self::Output,
     {
         self.into_inner().unwrap_or_else(f)
     }
@@ -216,13 +229,15 @@ impl<T, E: std::fmt::Debug> Failable for Later<Result<T, E>> {
     }
 
     fn unwrap_or<I>(self, fallback: T) -> T
-        where I: Into<T>
+    where
+        I: Into<T>,
     {
         self.into_inner().unwrap_or_else(|_| fallback)
     }
 
     fn unwrap_or_else<F>(self, f: F) -> Self::Output
-        where F: FnOnce() -> Self::Output
+    where
+        F: FnOnce() -> Self::Output,
     {
         self.into_inner().unwrap_or_else(|_| f())
     }
@@ -238,12 +253,13 @@ impl<T, E: std::fmt::Debug> Failable for Later<Result<T, E>> {
 
 impl<T> std::convert::AsRef<Later<T>> for Later<T> {
     fn as_ref(&self) -> &Later<T> {
-        &self
+        self
     }
 }
 
-impl<T> std::iter::IntoIterator for Later<T> 
-    where T: std::iter::IntoIterator
+impl<T> std::iter::IntoIterator for Later<T>
+where
+    T: std::iter::IntoIterator,
 {
     type Item = T::Item;
     type IntoIter = <T as std::iter::IntoIterator>::IntoIter;
@@ -254,15 +270,20 @@ impl<T> std::iter::IntoIterator for Later<T>
 }
 
 impl<T, A> Extend<A> for Later<T>
-    where T: Extend<A>
+where
+    T: Extend<A>,
 {
-    fn extend<Y>(&mut self, iter: Y) where Y: IntoIterator<Item = A> {
+    fn extend<Y>(&mut self, iter: Y)
+    where
+        Y: IntoIterator<Item = A>,
+    {
         self.get_mut().extend(iter)
     }
 }
 
 impl<T> std::fmt::Debug for Later<T>
-    where T: std::fmt::Debug
+where
+    T: std::fmt::Debug,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         if self.cell.filled() {
@@ -274,7 +295,8 @@ impl<T> std::fmt::Debug for Later<T>
 }
 
 impl<T> std::fmt::Display for Later<T>
-    where T: std::fmt::Display
+where
+    T: std::fmt::Display,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         if self.cell.filled() {
@@ -286,13 +308,13 @@ impl<T> std::fmt::Display for Later<T>
 }
 
 impl<T> std::cmp::PartialEq for Later<T>
-    where T: std::cmp::PartialEq<T>
+where
+    T: std::cmp::PartialEq<T>,
 {
     fn eq(&self, rhs: &Later<T>) -> bool {
         self.get().eq(rhs.get())
     }
 }
-
 
 //-------------------------  Into Traits  -------------------------//
 
@@ -328,7 +350,8 @@ impl<T> Into<Vec<T>> for Later<Vec<T>> {
 
 #[cfg(feature = "arrayvec")]
 impl<T> Into<arrayvec::ArrayVec<T>> for Later<arrayvec::ArrayVec<T>>
-    where T: arrayvec::Array
+where
+    T: arrayvec::Array,
 {
     fn into(self) -> arrayvec::ArrayVec<T> {
         self.into_inner()
@@ -337,7 +360,9 @@ impl<T> Into<arrayvec::ArrayVec<T>> for Later<arrayvec::ArrayVec<T>>
 
 #[cfg(feature = "arrayvec")]
 impl<T> Into<arrayvec::ArrayString<T>> for Later<arrayvec::ArrayString<T>>
-    where T: arrayvec::Array<Item = u8> {
+where
+    T: arrayvec::Array<Item = u8>,
+{
     fn into(self) -> arrayvec::ArrayString<T> {
         self.into_inner()
     }
@@ -358,9 +383,7 @@ impl Into<fixedbitset::FixedBitSet> for Later<fixedbitset::FixedBitSet> {
 }
 
 #[cfg(feature = "petgraph")]
-impl<N, E, Ty, Ix> Into<petgraph::Graph<N, E, Ty, Ix>>
-    for Later<petgraph::Graph<N, E, Ty, Ix>>
-{
+impl<N, E, Ty, Ix> Into<petgraph::Graph<N, E, Ty, Ix>> for Later<petgraph::Graph<N, E, Ty, Ix>> {
     fn into(self) -> petgraph::Graph<N, E, Ty, Ix> {
         self.into_inner()
     }
@@ -368,8 +391,7 @@ impl<N, E, Ty, Ix> Into<petgraph::Graph<N, E, Ty, Ix>>
 
 #[cfg(feature = "petgraph")]
 impl<N, E, Ty, Ix> Into<petgraph::stable_graph::StableGraph<N, E, Ty, Ix>>
-    for Later<petgraph::stable_graph::StableGraph<N, E, Ty, Ix>>
-{
+    for Later<petgraph::stable_graph::StableGraph<N, E, Ty, Ix>> {
     fn into(self) -> petgraph::stable_graph::StableGraph<N, E, Ty, Ix> {
         self.into_inner()
     }
@@ -377,64 +399,50 @@ impl<N, E, Ty, Ix> Into<petgraph::stable_graph::StableGraph<N, E, Ty, Ix>>
 
 #[cfg(feature = "petgraph")]
 impl<N, E, Ty> Into<petgraph::graphmap::GraphMap<N, E, Ty>>
-    for Later<petgraph::graphmap::GraphMap<N, E, Ty>>
-{
+    for Later<petgraph::graphmap::GraphMap<N, E, Ty>> {
     fn into(self) -> petgraph::graphmap::GraphMap<N, E, Ty> {
         self.into_inner()
     }
 }
 
-impl<K, V, S> Into<std::collections::HashMap<K, V, S>> for
-    Later<std::collections::HashMap<K, V, S>>
-{
+impl<K, V, S> Into<std::collections::HashMap<K, V, S>>
+    for Later<std::collections::HashMap<K, V, S>> {
     fn into(self) -> std::collections::HashMap<K, V, S> {
         self.into_inner()
     }
 }
 
-impl<T, S> Into<std::collections::HashSet<T, S>> for
-    Later<std::collections::HashSet<T, S>>
-{
+impl<T, S> Into<std::collections::HashSet<T, S>> for Later<std::collections::HashSet<T, S>> {
     fn into(self) -> std::collections::HashSet<T, S> {
         self.into_inner()
     }
 }
 
-impl<T> Into<std::collections::LinkedList<T>> for
-    Later<std::collections::LinkedList<T>>
-{
+impl<T> Into<std::collections::LinkedList<T>> for Later<std::collections::LinkedList<T>> {
     fn into(self) -> std::collections::LinkedList<T> {
         self.into_inner()
     }
 }
 
-impl<T> Into<std::collections::VecDeque<T>> for
-    Later<std::collections::VecDeque<T>>
-{
+impl<T> Into<std::collections::VecDeque<T>> for Later<std::collections::VecDeque<T>> {
     fn into(self) -> std::collections::VecDeque<T> {
         self.into_inner()
     }
 }
 
-impl<K, V> Into<std::collections::BTreeMap<K, V>> for
-    Later<std::collections::BTreeMap<K, V>>
-{
+impl<K, V> Into<std::collections::BTreeMap<K, V>> for Later<std::collections::BTreeMap<K, V>> {
     fn into(self) -> std::collections::BTreeMap<K, V> {
         self.into_inner()
     }
 }
 
-impl<T> Into<std::collections::BTreeSet<T>> for
-    Later<std::collections::BTreeSet<T>>
-{
+impl<T> Into<std::collections::BTreeSet<T>> for Later<std::collections::BTreeSet<T>> {
     fn into(self) -> std::collections::BTreeSet<T> {
         self.into_inner()
     }
 }
 
-impl<T> Into<std::collections::BinaryHeap<T>> for
-    Later<std::collections::BinaryHeap<T>>
-{
+impl<T> Into<std::collections::BinaryHeap<T>> for Later<std::collections::BinaryHeap<T>> {
     fn into(self) -> std::collections::BinaryHeap<T> {
         self.into_inner()
     }
@@ -512,11 +520,11 @@ impl Into<f64> for Later<f64> {
     }
 }
 
-
 //-------------------------  Operator Traits  -------------------------//
 
 impl<T> std::ops::Add for Later<T>
-    where T: std::ops::Add<Output=T>
+where
+    T: std::ops::Add<Output = T>,
 {
     type Output = Later<T>;
 
@@ -532,7 +540,8 @@ impl<T: std::ops::AddAssign<T>> std::ops::AddAssign for Later<T> {
 }
 
 impl<T> std::ops::BitAnd for Later<T>
-    where T: std::ops::BitAnd<Output=T>
+where
+    T: std::ops::BitAnd<Output = T>,
 {
     type Output = Later<T>;
 
@@ -548,7 +557,8 @@ impl<T: std::ops::BitAndAssign<T>> std::ops::BitAndAssign for Later<T> {
 }
 
 impl<T> std::ops::BitOr for Later<T>
-    where T: std::ops::BitOr<Output=T>
+where
+    T: std::ops::BitOr<Output = T>,
 {
     type Output = Later<T>;
 
@@ -564,7 +574,8 @@ impl<T: std::ops::BitOrAssign<T>> std::ops::BitOrAssign for Later<T> {
 }
 
 impl<T> std::ops::BitXor for Later<T>
-    where T: std::ops::BitXor<Output=T>
+where
+    T: std::ops::BitXor<Output = T>,
 {
     type Output = Later<T>;
 
@@ -594,7 +605,8 @@ impl<T> std::ops::DerefMut for Later<T> {
 }
 
 impl<T> std::ops::Div for Later<T>
-    where T: std::ops::Div<Output=T>
+where
+    T: std::ops::Div<Output = T>,
 {
     type Output = Later<T>;
 
@@ -610,7 +622,8 @@ impl<T: std::ops::DivAssign<T>> std::ops::DivAssign for Later<T> {
 }
 
 impl<T> std::ops::Index<T> for Later<T>
-    where T: std::ops::Index<T, Output=T>
+where
+    T: std::ops::Index<T, Output = T>,
 {
     type Output = T;
 
@@ -620,7 +633,8 @@ impl<T> std::ops::Index<T> for Later<T>
 }
 
 impl<T> std::ops::Mul for Later<T>
-    where T: std::ops::Mul<Output=T>
+where
+    T: std::ops::Mul<Output = T>,
 {
     type Output = Later<T>;
 
@@ -636,7 +650,8 @@ impl<T: std::ops::MulAssign<T>> std::ops::MulAssign for Later<T> {
 }
 
 impl<T> std::ops::Neg for Later<T>
-    where T: std::ops::Neg<Output=T>
+where
+    T: std::ops::Neg<Output = T>,
 {
     type Output = Later<T>;
 
@@ -646,7 +661,8 @@ impl<T> std::ops::Neg for Later<T>
 }
 
 impl<T> std::ops::Not for Later<T>
-    where T: std::ops::Not<Output=T>
+where
+    T: std::ops::Not<Output = T>,
 {
     type Output = Later<T>;
 
@@ -656,7 +672,8 @@ impl<T> std::ops::Not for Later<T>
 }
 
 impl<T> std::ops::Rem for Later<T>
-    where T: std::ops::Rem<Output=T>
+where
+    T: std::ops::Rem<Output = T>,
 {
     type Output = Later<T>;
 
@@ -672,7 +689,8 @@ impl<T: std::ops::RemAssign<T>> std::ops::RemAssign for Later<T> {
 }
 
 impl<T> std::ops::Shl<Later<T>> for Later<T>
-    where T: std::ops::Shl<T, Output=T>
+where
+    T: std::ops::Shl<T, Output = T>,
 {
     type Output = Later<T>;
 
@@ -682,7 +700,8 @@ impl<T> std::ops::Shl<Later<T>> for Later<T>
 }
 
 impl<T> std::ops::ShlAssign<Later<T>> for Later<T>
-    where T: std::ops::ShlAssign<T>
+where
+    T: std::ops::ShlAssign<T>,
 {
     fn shl_assign(&mut self, rhs: Later<T>) {
         self.get_mut().shl_assign(rhs.into_inner());
@@ -690,7 +709,8 @@ impl<T> std::ops::ShlAssign<Later<T>> for Later<T>
 }
 
 impl<T> std::ops::Shr<Later<T>> for Later<T>
-    where T: std::ops::Shr<T, Output=T>
+where
+    T: std::ops::Shr<T, Output = T>,
 {
     type Output = Later<T>;
 
@@ -700,7 +720,8 @@ impl<T> std::ops::Shr<Later<T>> for Later<T>
 }
 
 impl<T> std::ops::ShrAssign<Later<T>> for Later<T>
-    where T: std::ops::ShrAssign<T>
+where
+    T: std::ops::ShrAssign<T>,
 {
     fn shr_assign(&mut self, rhs: Later<T>) {
         self.get_mut().shr_assign(rhs.into_inner());
@@ -708,7 +729,8 @@ impl<T> std::ops::ShrAssign<Later<T>> for Later<T>
 }
 
 impl<T> std::ops::Sub for Later<T>
-    where T: std::ops::Sub<Output=T>
+where
+    T: std::ops::Sub<Output = T>,
 {
     type Output = Later<T>;
 
@@ -723,11 +745,11 @@ impl<T: std::ops::SubAssign<T>> std::ops::SubAssign for Later<T> {
     }
 }
 
-
 //-------------------------  Binary Number Types  -------------------------//
 
 impl<T> std::fmt::UpperHex for Later<T>
-    where T: std::fmt::UpperHex 
+where
+    T: std::fmt::UpperHex,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         self.get().fmt(f)
@@ -735,7 +757,8 @@ impl<T> std::fmt::UpperHex for Later<T>
 }
 
 impl<T> std::fmt::LowerHex for Later<T>
-    where T: std::fmt::LowerHex 
+where
+    T: std::fmt::LowerHex,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         self.get().fmt(f)
@@ -743,7 +766,8 @@ impl<T> std::fmt::LowerHex for Later<T>
 }
 
 impl<T> std::fmt::Octal for Later<T>
-    where T: std::fmt::Octal 
+where
+    T: std::fmt::Octal,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         self.get().fmt(f)
@@ -751,13 +775,13 @@ impl<T> std::fmt::Octal for Later<T>
 }
 
 impl<T> std::fmt::Binary for Later<T>
-    where T: std::fmt::Binary 
+where
+    T: std::fmt::Binary,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         self.get().fmt(f)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -766,14 +790,18 @@ mod tests {
     #[test]
     fn later() {
         let l = Later::new(|| "abc".to_owned());
-        assert!(! l.has_value());
+        assert!(!l.has_value());
         assert_eq!("abc", l.get());
         assert!(l.has_value());
         assert_eq!("abc", *l);
 
         assert_eq!(1, later!(1).into_inner());
         println!("{:?}", later!(2));
-        println!("{:?}", {let l = later!(3); l.get(); l});
+        println!("{:?}", {
+            let l = later!(3);
+            l.get();
+            l
+        });
 
         assert_eq!(2, later!(Some(2)).unwrap());
     }
@@ -791,19 +819,19 @@ mod tests {
             println!("first");
             100
         });
-        assert!(! l1.has_value());
+        assert!(!l1.has_value());
         assert_eq!(100, *l1);
-        assert!( l1.has_value());
+        assert!(l1.has_value());
 
         let l2 = l1.map(|n| {
             println!("second");
             n.to_string()
         });
-        assert!(! l2.has_value());
+        assert!(!l2.has_value());
         assert_eq!("100", *l2);
         assert!(l2.has_value());
 
-        assert_eq!("ab", later!("a".to_owned()).map(|s| s+"b").get());
+        assert_eq!("ab", later!("a".to_owned()).map(|s| s + "b").get());
     }
 
     #[test]
@@ -825,10 +853,10 @@ mod tests {
             }
         }
 
-        let l1 = later!(Point{x: 1, y: 0});
-        let l2 = later!(Point{x: 2, y: 3});
-        assert_eq!(Point{x: 3, y: 3}, (l1+l2).into_inner());
-        assert_eq!(10, later!(vec![10,2,3])[0]);
+        let l1 = later!(Point { x: 1, y: 0 });
+        let l2 = later!(Point { x: 2, y: 3 });
+        assert_eq!(Point { x: 3, y: 3 }, (l1 + l2).into_inner());
+        assert_eq!(10, later!(vec![10, 2, 3])[0]);
 
         assert_eq!(16, *(later!(4) << later!(2)));
         assert_eq!(16, 4 << 2);
