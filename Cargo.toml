@@ -1,6 +1,6 @@
 [package]
 name        = "later"
-version     = "0.1.3"
+version     = "0.1.4"
 authors     = ["Thibaut Brandscheid <randaltor@web.de>"]
 description = "Later owns the result of a lazy computation which can be accessed via reference."
 license     = "BSD 2-Clause"
@@ -8,8 +8,8 @@ categories  = ["data-structures", "rust-patterns"]
 readme      = "README.md"
 
 [dependencies]
-lazycell    = "0.6.0"
-arrayvec    = { version = "*", optional = true }
-either      = { version = "*", optional = true }
-fixedbitset = { version = "*", optional = true }
-petgraph    = { version = "*", optional = true }
+lazycell    = "1.0.0"
+arrayvec    = { version = "0.4.7", optional = true }
+either      = { version = "1.5.0", optional = true }
+fixedbitset = { version = "0.1.9", optional = true }
+petgraph    = { version = "0.4.12", optional = true }

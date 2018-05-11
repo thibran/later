@@ -65,7 +65,7 @@ use lazycell::LazyCell;
 macro_rules! later {
     ($e:expr) => {
         $crate::Later::new(move || $e)
-    }
+    };
 }
 
 pub struct Later<T> {
@@ -103,7 +103,7 @@ impl<T> Later<T> {
         let cell = LazyCell::new();
         let _ = cell.fill(val);
         Later {
-            cell: cell,
+            cell,
             f: Box::new(|| unreachable!()),
         }
     }
@@ -158,6 +158,10 @@ impl<T> Later<T> {
     pub fn into_inner(self) -> T {
         self.initialize_if_empty();
         self.cell.into_inner().unwrap() // is save, value must be present
+    }
+
+    pub fn into_fn(self) -> impl FnOnce() -> T {
+        || self.into_inner()
     }
 
     pub fn clone_inner(&self) -> T
@@ -391,7 +395,8 @@ impl<N, E, Ty, Ix> Into<petgraph::Graph<N, E, Ty, Ix>> for Later<petgraph::Graph
 
 #[cfg(feature = "petgraph")]
 impl<N, E, Ty, Ix> Into<petgraph::stable_graph::StableGraph<N, E, Ty, Ix>>
-    for Later<petgraph::stable_graph::StableGraph<N, E, Ty, Ix>> {
+    for Later<petgraph::stable_graph::StableGraph<N, E, Ty, Ix>>
+{
     fn into(self) -> petgraph::stable_graph::StableGraph<N, E, Ty, Ix> {
         self.into_inner()
     }
@@ -399,14 +404,16 @@ impl<N, E, Ty, Ix> Into<petgraph::stable_graph::StableGraph<N, E, Ty, Ix>>
 
 #[cfg(feature = "petgraph")]
 impl<N, E, Ty> Into<petgraph::graphmap::GraphMap<N, E, Ty>>
-    for Later<petgraph::graphmap::GraphMap<N, E, Ty>> {
+    for Later<petgraph::graphmap::GraphMap<N, E, Ty>>
+{
     fn into(self) -> petgraph::graphmap::GraphMap<N, E, Ty> {
         self.into_inner()
     }
 }
 
 impl<K, V, S> Into<std::collections::HashMap<K, V, S>>
-    for Later<std::collections::HashMap<K, V, S>> {
+    for Later<std::collections::HashMap<K, V, S>>
+{
     fn into(self) -> std::collections::HashMap<K, V, S> {
         self.into_inner()
     }
