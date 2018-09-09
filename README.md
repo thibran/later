@@ -3,7 +3,7 @@
 Later owns the result of a lazy computation which can be accessed via reference.  
 Works on stable Rust.
 
-Version: 0.1.3
+Version: 0.2.0
 
 ## Installation
 
@@ -11,7 +11,7 @@ Add to `Cargo.toml`:
 ```toml
 [dependencies.later]
 git = "https://github.com/thibran/later.git"
-tag = "v0.1.3"
+tag = "v0.2.0"
 ```
 
 ## Examples

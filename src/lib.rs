@@ -1,6 +1,6 @@
 /*!
 [Later](struct.Later.html) owns the result of a lazy computation which
-can be accessed via [reference](struct.Later.html#method.get).  
+can be accessed via [reference](struct.Later.html#method.get).
 Works on stable Rust.
 
 # Examples
@@ -15,7 +15,7 @@ extern crate later;
 use later::Later;
 
 fn main() {
-    let l: Later<String> = Later::new(|| { 
+    let l: Later<String> = Later::new(|| {
         println!("hello from closure");
         "foo".to_owned()
     });
@@ -58,7 +58,6 @@ extern crate fixedbitset;
 #[cfg(feature = "petgraph")]
 extern crate petgraph;
 
-extern crate lazycell;
 use lazycell::LazyCell;
 
 #[macro_export]
@@ -70,7 +69,7 @@ macro_rules! later {
 
 pub struct Later<T> {
     cell: LazyCell<T>,
-    f: Box<Fn() -> T>,
+    f: Box<dyn Fn() -> T>,
 }
 
 /// Unwrap methods for the Later wrapper.
